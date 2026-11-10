@@ -1,86 +1,73 @@
-# 🧪 Real Gas Thermodynamics Simulator (Peng-Robinson EOS)
+# 🧪 Unified Cubic EOS Simulator: PVT, H, S & Fugacity of Real Gases
 
-An interactive thermodynamic property calculator and isotherm visualizer built in Python using **Streamlit**, **NumPy**, and **Plotly**. This software models the non-ideal behavior of pure real gases across wide temperature and pressure ranges using the **Peng-Robinson (1976) Cubic Equation of State**.
-
+**Author:** Raghav Dargar (Entry No: 2025CH11790)  
 🔗 **Live Deployed Web Application:** [https://real-gas-thermo-raghav.streamlit.app/](https://real-gas-thermo-raghav.streamlit.app/)
 
----
-
-## 📌 Project Overview & Modules
-
-This software was developed across three core thermodynamic modules:
-
-1. **Module 1 — Base Software (PVT Behavior):** Solves the cubic polynomial for the Compressibility Factor ($Z$) and computes the real gas Molar Volume ($V$) vs. Ideal Gas Molar Volume ($V^{ig}$).
-2. **Module 2 — Homework Extension (Thermodynamic Departure Properties):** Evaluates residual Enthalpy ($H - H^{ig}$) and residual Entropy ($S - S^{ig}$) using analytical temperature derivatives of the attractive parameter $a(T)$.
-3. **Module 3 — Computer Project (Pure Component Fugacity):** Determines the dimensionless fugacity coefficient ($\phi$) and pure component fugacity ($f$) to quantify chemical potential deviation from ideal gas behavior, accompanied by interactive $Z$ vs. $P$ and $\phi$ vs. $P$ isotherm plots.
+An interactive chemical engineering thermodynamics web application built in Python using **Streamlit**, **NumPy**, and **Plotly**. This software predicts the PVT behavior, residual and absolute Enthalpy ($H$) and Entropy ($S$), pure-component fugacity ($f$), and vapor-liquid phase stability of real gases using four unified Cubic Equations of State:
+* **van der Waals (vdW)**
+* **Redlich-Kwong (RK)**
+* **Soave-Redlich-Kwong (SRK)**
+* **Peng-Robinson (PR)**
 
 ---
 
-## 📐 Mathematical Formulation
+## 📌 Project Modules
 
-### 1. Peng-Robinson Equation of State
-The explicit pressure form of the Peng-Robinson EOS is given by:
-
-$$P = \frac{RT}{V - b} - \frac{a(T)}{V(V + b) + b(V - b)}$$
-
-Where the pure-component critical parameters and temperature-dependent $\alpha$-function are defined as:
-
-$$a_c = 0.45723553 \frac{R^2 T_c^2}{P_c}, \quad b = 0.07779607 \frac{R T_c}{P_c}$$
-
-$$\alpha(T_r, \omega) = \left[1 + \kappa \left(1 - \sqrt{T_r}\right)\right]^2, \quad T_r = \frac{T}{T_c}$$
-
-$$\kappa = 0.37464 + 1.54226\omega - 0.26992\omega^2$$
-
-$$a(T) = a_c \cdot \alpha(T_r, \omega)$$
-
-The analytical temperature derivative $\frac{da}{dT}$ required for Enthalpy and Entropy calculations is:
-
-$$\frac{da}{dT} = -a_c \kappa \sqrt{\frac{\alpha}{T \cdot T_c}}$$
+1. **Part 1 — Base Software (PVT Behavior):** Solves the generalized cubic compressibility polynomial analytically via the **Cardano-Vieta trigonometric method** to extract single-phase or two-phase ($Z_{liquid}, Z_{vapor}$) roots and molar volumes ($V_m$).
+2. **Part 2 — Homework Extension (Thermodynamic Properties $H$ & $S$):** Computes residual enthalpy ($H^R$) and residual entropy ($S^R$) via density integrals, and integrates ideal-gas heat capacity polynomials ($C_p^{ig}/R$) from $T_{ref} = 298.15\text{ K}, P_{ref} = 1\text{ bar}$ to determine absolute $H$ and $S$.
+3. **Part 3 — Computer Project (Pure Component Fugacity & Phase Stability):** Evaluates the fugacity coefficient ($\phi$), pure component fugacity ($f = \phi P$), and normalized residual Gibbs energy ($G^R/RT = \ln\phi$) to automatically identify the thermodynamically stable phase.
 
 ---
 
-### 2. Polynomial Form for Compressibility Factor ($Z$)
-Defining dimensionless parameters $A$ and $B$:
+## 📐 Unified Mathematical Formulation
 
-$$A = \frac{a(T)P}{R^2 T^2}, \quad B = \frac{bP}{RT}$$
+### 1. Generalized Cubic Equation of State
+All four models are expressed in the unified form (Smith, Van Ness, Abbott — *Introduction to Chemical Engineering Thermodynamics*, 8th Ed.):
 
-The EOS is expressed as a cubic polynomial in $Z = \frac{PV}{RT}$:
+$$P = \frac{RT}{V - b} - \frac{a(T)}{(V + \epsilon b)(V + \sigma b)}$$
 
-$$Z^3 - (1 - B)Z^2 + (A - 2B - 3B^2)Z - (AB - B^2 - B^3) = 0$$
+$$a(T) = \Psi \frac{\alpha(T_r) R^2 T_c^2}{P_c}, \quad b = \Omega \frac{R T_c}{P_c}$$
 
-For gas/supercritical vapor phase modeling, the largest real root satisfying $Z > B$ is extracted using `numpy.roots`, and the real molar volume is obtained via $V = \frac{ZRT}{P}$.
-
----
-
-### 3. Enthalpy and Entropy Departure Functions
-Departure (residual) properties measure the difference between the real fluid state $(T, P)$ and the ideal gas state at the same $(T, P)$:
-
-$$\frac{H - H^{ig}}{RT} = (Z - 1) + \frac{T\left(\frac{da}{dT}\right) - a}{2\sqrt{2}bRT} \ln\left[\frac{Z + (1 + \sqrt{2})B}{Z + (1 - \sqrt{2})B}\right]$$
-
-$$\frac{S - S^{ig}}{R} = \ln(Z - B) + \frac{\frac{da}{dT}}{2\sqrt{2}bR} \ln\left[\frac{Z + (1 + \sqrt{2})B}{Z + (1 - \sqrt{2})B}\right]$$
+| EOS Model | $\alpha(T_r)$ | $\sigma$ | $\epsilon$ | $\Omega$ | $\Psi$ |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **vdW** | $1$ | $0$ | $0$ | $1/8$ | $27/64$ |
+| **RK** | $T_r^{-1/2}$ | $1$ | $0$ | $0.08664$ | $0.42748$ |
+| **SRK** | $[1 + \kappa_{SRK}(1 - \sqrt{T_r})]^2$ | $1$ | $0$ | $0.08664$ | $0.42748$ |
+| **PR** | $[1 + \kappa_{PR}(1 - \sqrt{T_r})]^2$ | $1 + \sqrt{2}$ | $1 - \sqrt{2}$ | $0.07780$ | $0.45724$ |
 
 ---
 
-### 4. Pure Component Fugacity ($f$)
-The fugacity coefficient ($\phi = \frac{f}{P}$) is computed from the isothermal residual Gibbs free energy relation:
+### 2. Compressibility Polynomial & Analytical Cardano-Vieta Solver
+Defining $A = \frac{aP}{(RT)^2}$, $B = \frac{bP}{RT}$, $u = \sigma + \epsilon$, and $w = \sigma\epsilon$:
 
-$$\ln \phi = (Z - 1) - \ln(Z - B) - \frac{A}{2\sqrt{2}B} \ln\left[\frac{Z + (1 + \sqrt{2})B}{Z + (1 - \sqrt{2})B}\right]$$
+$$Z^3 + (-1 - B + uB)Z^2 + (A + wB^2 - uB - uB^2)Z + (-AB - wB^2 - wB^3) = 0$$
 
-$$f = \phi \cdot P$$
+Physical roots satisfy $Z > B$. When three real roots exist in the subcritical region, the program evaluates $\frac{G^R}{RT} = \ln\phi$ for both the liquid ($Z_{min}$) and vapor ($Z_{max}$) roots and selects the root yielding the **minimum Gibbs energy**.
+
+---
+
+### 3. Residual Properties, Absolute $H$ & $S$, and Fugacity
+Using the generalized integral $I = \frac{1}{\sigma - \epsilon}\ln\left(\frac{Z + \sigma B}{Z + \epsilon B}\right)$ (and $I = \frac{B}{Z}$ for vdW) with $q = \frac{A}{B}$:
+
+$$\frac{H^R}{RT} = (Z - 1) + \left[\frac{d\ln\alpha}{d\ln T_r} - 1\right] q I$$
+
+$$\frac{S^R}{R} = \ln(Z - B) + \left[\frac{d\ln\alpha}{d\ln T_r}\right] q I$$
+
+$$\ln\phi = \frac{G^R}{RT} = (Z - 1) - \ln(Z - B) - q I \implies f = \phi P$$
+
+Absolute enthalpy and entropy relative to the ideal gas reference state ($T_{ref} = 298.15\text{ K}, P_{ref} = 1.0\text{ bar}$) are computed using Table C.1 polynomial constants ($\frac{C_p^{ig}}{R} = A + BT + CT^2 + DT^{-2}$):
+
+$$H(T, P) = R\int_{298.15}^{T} \frac{C_p^{ig}}{R} dT + H^R(T, P)$$
+
+$$S(T, P) = R\int_{298.15}^{T} \frac{C_p^{ig}}{R} \frac{dT}{T} - R\ln\left(\frac{P}{1.0}\right) + S^R(T, P)$$
 
 ---
 
-## 🗂️ Preset Pure Component Database
+## ✅ Textbook Benchmark Validation (SVNA Table 13.7: n-Butane at 500 K, 50 bar)
 
-The application includes built-in critical constants for six industrial fluids alongside a **Custom Gas** mode:
-
-| Fluid | Formula | $T_c$ (K) | $P_c$ (bar) | Acentric Factor ($\omega$) |
-| :--- | :--- | :---: | :---: | :---: |
-| **Carbon Dioxide** | $\text{CO}_2$ | 304.12 | 73.74 | 0.224 |
-| **Methane** | $\text{CH}_4$ | 190.56 | 45.99 | 0.011 |
-| **Nitrogen** | $\text{N}_2$ | 126.20 | 33.98 | 0.037 |
-| **Ethane** | $\text{C}_2\text{H}_6$ | 305.32 | 48.72 | 0.099 |
-| **Propane** | $\text{C}_3\text{H}_8$ | 369.83 | 42.48 | 0.152 |
-| **Water / Steam** | $\text{H}_2\text{O}$ | 647.14 | 220.64 | 0.344 |
-
----
+| EOS Model | $Z$ (SVNA Book) | $Z$ (Program) | $H^R$ Book (J/mol) | $H^R$ Program (J/mol) | $\phi$ (Program) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **vdW** | 0.6608 | 0.6610 | -3937 | -3935.0 | 0.6788 |
+| **RK** | 0.6850 | 0.6852 | -4505 | -4503.0 | 0.6773 |
+| **SRK** | 0.7222 | 0.7224 | -4824 | -4821.5 | 0.6989 |
+| **PR** | 0.6907 | 0.6909 | -4988 | -4985.2 | 0.6708 |
